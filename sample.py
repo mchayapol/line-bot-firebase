@@ -27,6 +27,7 @@ from linebot import (
 from linebot.exceptions import (
     InvalidSignatureError, LineBotApiError
 )
+
 from linebot.models import (
     MessageEvent, TextMessage, TextSendMessage,
     SourceUser, SourceGroup, SourceRoom,
@@ -58,10 +59,10 @@ if databaseURL is None:
 line_bot_api = LineBotApi(channel_access_token)
 handler = WebhookHandler(channel_secret)
 
-
-lfb = None
 cred = credentials.Certificate('../run/serviceAccountKey.json')
 default_app = firebase_admin.initialize_app(cred, {'databaseURL': databaseURL})
+
+lfb = LineFirebase.LineFirebase(line_bot_api, db)
 
 
 @app.route("/callback", methods=['POST'])
@@ -76,7 +77,6 @@ def callback():
     app.logger.info("Request body: " + body)
 
     try:
-        lfb = LineFirebase.LineFirebase(line_bot_api, db)
         handler.handle(body, signature)
     except InvalidSignatureError:
         abort(400)
@@ -89,9 +89,9 @@ def handle_image_message(event):
     global lfb
 
     lfb.save(event)
-    line_bot_api.reply_message(
-        event.reply_token,
-        TextMessage(text="Saved to Firebase"))
+    # line_bot_api.reply_message(
+    #     event.reply_token,
+    #     TextMessage(text="Saved to Firebase"))
 
     # TODO extract image to save to storage
 
@@ -134,7 +134,7 @@ def handle_text_message(event):
             # Echo for unknown command
             print("Unhandled command: ", TextSendMessage(text=event.message.text))
 
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=event.message.text + '?'))
+            # line_bot_api.reply_message(event.reply_token, TextSendMessage(text=event.message.text + '?'))
 
 
 @handler.add(MessageEvent, message=StickerMessage)
